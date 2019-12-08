@@ -1,60 +1,28 @@
-'''
-Q-learning approach for different RL problems
-as part of the basic series on reinforcement learning @
-https://github.com/vmayoral/basic_reinforcement_learning
- 
-Inspired by https://gym.openai.com/evaluations/eval_kWknKOkPQ7izrixdhriurA
- 
-        @author: Victor Mayoral Vilches <victor@erlerobotics.com>
-'''
 import random
+import numpy as np
+import time, pickle, os
+import sys
 
 class QLearn:
-    def __init__(self, actions, epsilon, alpha, gamma):
-        self.q = {}
-        self.epsilon = epsilon  # exploration constant
-        self.alpha = alpha      # discount constant
-        self.gamma = gamma      # discount factor
+    def __init__(self, states, actions, epsilon, alpha, gamma):
+        self.q = np.zeros((states, actions))
+        self.epsilon = epsilon  
+        self.alpha = alpha     
+        self.gamma = gamma    
         self.actions = actions
 
-    def getQ(self, state, action):
-        return self.q.get((state, action), 0.0)
-
-    def learnQ(self, state, action, reward, value):
-        '''
-        Q-learning:
-            Q(s, a) += alpha * (reward(s,a) + max(Q(s') - Q(s,a))            
-        '''
-        oldv = self.q.get((state, action), None)
-        if oldv is None:
-            self.q[(state, action)] = reward
-        else:
-            self.q[(state, action)] = oldv + self.alpha * (value - oldv)
-
     def chooseAction(self, state, return_q=False):
-        q = [self.getQ(state, a) for a in self.actions]
-        maxQ = max(q)
-
-        if random.random() < self.epsilon:
-            minQ = min(q); mag = max(abs(minQ), abs(maxQ))
-            # add random values to all the actions, recalculate maxQ
-            q = [q[i] + random.random() * mag - .5 * mag for i in range(len(self.actions))] 
-            maxQ = max(q)
-
-        count = q.count(maxQ)
-        # In case there're several state-action max values 
-        # we select a random one among them
-        if count > 1:
-            best = [i for i in range(len(self.actions)) if q[i] == maxQ]
-            i = random.choice(best)
+        action = 0
+        if np.random.uniform(0, 1) < self.epsilon:
+            action = env.action_space.sample()
         else:
-            i = q.index(maxQ)
+            action = np.argmax(self.q[state, :])
+        if return_q:
+            return action, self.q[state][action]
+        else:
+            return action
 
-        action = self.actions[i]        
-        if return_q: # if they want it, give it!
-            return action, q
-        return action
-
-    def learn(self, state1, action1, reward, state2):
-        maxqnew = max([self.getQ(state2, a) for a in self.actions])
-        self.learnQ(state1, action1, reward, reward + self.gamma*maxqnew)
+    def learn(self, state, action, reward, state2):
+        predict = self.q[state,action]
+        target = reward + self.gamma * np.max(self.q[state2, :])
+        self.q[state, action] = self.q[state, action] + self.alpha * (target - predict)

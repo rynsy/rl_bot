@@ -47,7 +47,8 @@ if __name__ == '__main__':
     running_step = rospy.get_param("/turtlebot2/running_step")
 
     # Initialises the algorithm that we are going to use for learning
-    qlearn = qlearn.QLearn(actions=range(env.action_space.n),
+    qlearn = qlearn.QLearn(states=range(env.observation_space.n), 
+                           actions=range(env.action_space.n),
                            alpha=Alpha, gamma=Gamma, epsilon=Epsilon)
     initial_epsilon = qlearn.epsilon
 
